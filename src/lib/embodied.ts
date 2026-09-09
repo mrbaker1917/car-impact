@@ -47,6 +47,45 @@ const GLIDER_SHARE: Record<Vehicle["powertrain"], GliderShare> = {
   bev: { steel: 0.55, aluminum: 0.14, copper: 0.035, other: 0.275 },
 };
 
+/**
+ * ELV recovery rates for a scrapped light-duty vehicle in Canada.
+ * Steel and aluminum are magnetic/eddy-current separated; copper wiring
+ * and plastics mostly stay in shredder residue. Not a legal mandate:
+ * Canada has no national ELV law.
+ */
+const RECOVERY = {
+  steel: 0.9,
+  aluminum: 0.85,
+  copper: 0.6,
+  other: 0.05,
+} as const;
+
+/**
+ * Avoided GHG per kg recovered, beyond the recycled-content mix already
+ * in the build number. Smaller than primary-metal intensities so scrap
+ * is not double-counted. Steel ~EAF vs remaining BF-BOF; aluminum remelt
+ * vs remaining primary; copper scrap vs remaining concentrate.
+ */
+const SCRAP_CREDIT = {
+  steel: 1.2,
+  aluminum: 6,
+  copper: 2.5,
+} as const;
+
+const SHRED_BASE_KG = 80;
+const SHRED_PER_KG = 0.05;
+const RESIDUE_KG_PER_KG = 0.25;
+
+/**
+ * Net battery-recycling credit, kg CO2e per kWh, after process energy.
+ * NMC recovers nickel and cobalt; LFP mostly aluminum, copper, and some lithium.
+ * Assumes hydrometallurgy / Call2Recycle-style recycle, not second life.
+ */
+const BATTERY_RECYCLE_CREDIT: Record<BatteryChemistry, number> = {
+  nmc: 22,
+  lfp: 8,
+};
+
 export const CHEMISTRY_LABEL: Record<BatteryChemistry, string> = {
   nmc: "NMC",
   lfp: "LFP",
@@ -54,6 +93,12 @@ export const CHEMISTRY_LABEL: Record<BatteryChemistry, string> = {
 
 export type ManufactureSlice = {
   id: "steel" | "aluminum" | "copper" | "battery" | "other" | "factory";
+  label: string;
+  kg: number;
+};
+
+export type DisposalSlice = {
+  id: "scrap" | "batteryRecycle" | "process";
   label: string;
   kg: number;
 };
@@ -75,20 +120,53 @@ export type ManufactureBreakdown = {
   slices: ManufactureSlice[];
 };
 
-export function embodiedEmissions(vehicle: Vehicle): ManufactureBreakdown {
+export type DisposalBreakdown = {
+  scrapKg: number;
+  batteryKg: number;
+  processKg: number;
+  netKg: number;
+  gPerKm: number;
+  slices: DisposalSlice[];
+};
+
+type MaterialBill = {
+  gliderKg: number;
+  steelMass: number;
+  aluminumMass: number;
+  copperMass: number;
+  otherMass: number;
+  packKwh: number | null;
+  chemistry: BatteryChemistry | null;
+};
+
+function materialBill(vehicle: Vehicle): MaterialBill {
   const chemistry = vehicle.batteryChemistry;
   const packKwh = vehicle.batteryKwh;
   const packMass =
     chemistry && packKwh != null ? packKwh * PACK_KG_PER_KWH[chemistry] : 0;
   const gliderKg = Math.max(vehicle.curbWeightKg - packMass, vehicle.curbWeightKg * 0.55);
   const share = GLIDER_SHARE[vehicle.powertrain];
+  return {
+    gliderKg,
+    steelMass: gliderKg * share.steel,
+    aluminumMass: gliderKg * share.aluminum,
+    copperMass: gliderKg * share.copper,
+    otherMass: gliderKg * share.other,
+    packKwh,
+    chemistry,
+  };
+}
 
-  const steelKg = gliderKg * share.steel * INTENSITY.steel;
-  const aluminumKg = gliderKg * share.aluminum * INTENSITY.aluminum;
-  const copperKg = gliderKg * share.copper * INTENSITY.copper;
-  const otherKg = gliderKg * share.other * INTENSITY.other;
+export function embodiedEmissions(vehicle: Vehicle): ManufactureBreakdown {
+  const bill = materialBill(vehicle);
+  const steelKg = bill.steelMass * INTENSITY.steel;
+  const aluminumKg = bill.aluminumMass * INTENSITY.aluminum;
+  const copperKg = bill.copperMass * INTENSITY.copper;
+  const otherKg = bill.otherMass * INTENSITY.other;
   const batteryKg =
-    chemistry && packKwh != null ? packKwh * BATTERY_KG_PER_KWH[chemistry] : 0;
+    bill.chemistry && bill.packKwh != null
+      ? bill.packKwh * BATTERY_KG_PER_KWH[bill.chemistry]
+      : 0;
   const factoryKg = FACTORY_BASE_KG + FACTORY_PER_KG * vehicle.curbWeightKg;
   const totalKg = steelKg + aluminumKg + copperKg + otherKg + batteryKg + factoryKg;
 
@@ -106,9 +184,9 @@ export function embodiedEmissions(vehicle: Vehicle): ManufactureBreakdown {
   return {
     curbWeightKg: vehicle.curbWeightKg,
     weightSource: vehicle.weightSource,
-    gliderKg: Math.round(gliderKg),
-    batteryKwh: packKwh,
-    batteryChemistry: chemistry,
+    gliderKg: Math.round(bill.gliderKg),
+    batteryKwh: bill.packKwh,
+    batteryChemistry: bill.chemistry,
     steelKg,
     aluminumKg,
     copperKg,
@@ -117,6 +195,42 @@ export function embodiedEmissions(vehicle: Vehicle): ManufactureBreakdown {
     factoryKg,
     totalKg,
     gPerKm: (totalKg * 1000) / LIFETIME_KM,
+    slices,
+  };
+}
+
+export function disposalEmissions(vehicle: Vehicle): DisposalBreakdown {
+  const bill = materialBill(vehicle);
+  const scrapKg = -(
+    bill.steelMass * RECOVERY.steel * SCRAP_CREDIT.steel +
+    bill.aluminumMass * RECOVERY.aluminum * SCRAP_CREDIT.aluminum +
+    bill.copperMass * RECOVERY.copper * SCRAP_CREDIT.copper
+  );
+  const unrecoveredOther = bill.otherMass * (1 - RECOVERY.other);
+  const processKg =
+    SHRED_BASE_KG +
+    SHRED_PER_KG * vehicle.curbWeightKg +
+    unrecoveredOther * RESIDUE_KG_PER_KG;
+  const batteryKg =
+    bill.chemistry && bill.packKwh != null
+      ? -(bill.packKwh * BATTERY_RECYCLE_CREDIT[bill.chemistry])
+      : 0;
+  const netKg = scrapKg + batteryKg + processKg;
+
+  const slices: DisposalSlice[] = (
+    [
+      { id: "scrap", label: "Scrap metals", kg: scrapKg },
+      { id: "batteryRecycle", label: "Battery recycle", kg: batteryKg },
+      { id: "process", label: "Shredding and residue", kg: processKg },
+    ] as const
+  ).filter((slice) => Math.abs(slice.kg) >= 1);
+
+  return {
+    scrapKg,
+    batteryKg,
+    processKg,
+    netKg,
+    gPerKm: (netKg * 1000) / LIFETIME_KM,
     slices,
   };
 }
@@ -140,4 +254,11 @@ export function batteryCaption(vehicle: Vehicle): string | null {
     return `${vehicle.batteryKwh} kWh pack, ${assumed}`;
   }
   return `~${vehicle.batteryKwh} kWh pack, ${assumed}`;
+}
+
+export function disposalCaption(vehicle: Vehicle): string {
+  if (vehicle.powertrain === "bev" || vehicle.powertrain === "phev") {
+    return "assumed scrapped; pack recycled, not reused";
+  }
+  return "assumed scrapped and shredded";
 }

@@ -92,11 +92,13 @@ export function drivingEmissions(
 }
 
 export function formatKg(kg: number): string {
+  if (kg < 0) return `−${formatKg(-kg)}`;
   if (kg >= 1000) return `${(kg / 1000).toFixed(1)} t`;
   return `${Math.round(kg)} kg`;
 }
 
 export function formatGPerKm(g: number): string {
+  if (g < 0) return `−${formatGPerKm(-g)}`;
   if (g < 10) return `${g.toFixed(1)} g/km`;
   return `${Math.round(g)} g/km`;
 }

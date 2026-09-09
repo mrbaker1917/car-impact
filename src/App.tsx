@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import {
   batteryCaption,
+  disposalCaption,
+  disposalEmissions,
   embodiedEmissions,
   LIFETIME_KM,
   weightCaption,
@@ -78,17 +80,27 @@ export default function App() {
   const results = picks.map((vehicle) => {
     const driving = drivingEmissions(vehicle, province, kmPerYear);
     const manufacture = embodiedEmissions(vehicle);
+    const disposal = disposalEmissions(vehicle);
     const drivingLifetimeKg = (driving.totalGPerKm * LIFETIME_KM) / 1000;
+    const vehicleCycleKg = manufacture.totalKg + disposal.netKg;
     return {
       vehicle,
       driving,
       manufacture,
+      disposal,
       drivingLifetimeKg,
-      lifetimeKg: manufacture.totalKg + drivingLifetimeKg,
+      vehicleCycleKg,
+      lifetimeKg: vehicleCycleKg + drivingLifetimeKg,
     };
   });
   const maxDriveG = Math.max(...results.map((row) => row.driving.totalGPerKm), 1);
   const maxBuildKg = Math.max(...results.map((row) => row.manufacture.totalKg), 1);
+  const maxDisposalKg = Math.max(
+    ...results.map((row) =>
+      row.disposal.slices.reduce((sum, slice) => sum + Math.abs(slice.kg), 0),
+    ),
+    1,
+  );
   const maxLifeKg = Math.max(...results.map((row) => row.lifetimeKg), 1);
 
   return (
@@ -96,9 +108,9 @@ export default function App() {
       <header className="masthead">
         <h1>Car impact</h1>
         <p className="lede">
-          Compare mining, factory, and driving emissions for cars sold in
-          Canada. Switch province to see how the grid changes the rest of the
-          story. End of life is still to come.
+          Compare mining, factory, driving, and end-of-life emissions for cars
+          sold in Canada. Switch province to see how the grid changes the rest
+          of the story.
         </p>
       </header>
 
@@ -197,9 +209,17 @@ export default function App() {
       {results.length > 0 && (
         <section className="compare">
           {results.map(
-            ({ vehicle, driving, manufacture, drivingLifetimeKg, lifetimeKg }) => {
+            ({
+              vehicle,
+              driving,
+              manufacture,
+              disposal,
+              drivingLifetimeKg,
+              vehicleCycleKg,
+              lifetimeKg,
+            }) => {
               const pack = batteryCaption(vehicle);
-              const buildShare = lifetimeKg > 0 ? manufacture.totalKg / lifetimeKg : 0;
+              const buildShare = lifetimeKg > 0 ? vehicleCycleKg / lifetimeKg : 0;
               return (
                 <article className="card" key={vehicle.id}>
                   <span className="badge">{fuelLabel(vehicle)}</span>
@@ -283,20 +303,51 @@ export default function App() {
                     ))}
                   </div>
 
+                  <div className="stat manufacture-stat">
+                    {formatKg(disposal.netKg)}
+                    <span>
+                      {disposal.netKg < 0
+                        ? "recovered if recycled"
+                        : "to dispose"}
+                      , {formatGPerKm(disposal.gPerKm)} over{" "}
+                      {LIFETIME_KM.toLocaleString("en-CA")} km
+                    </span>
+                  </div>
+                  <div className="result-meta">{disposalCaption(vehicle)}</div>
+                  <div className="bar" aria-hidden="true">
+                    {disposal.slices.map((slice) => (
+                      <i
+                        key={slice.id}
+                        className={slice.id}
+                        style={{
+                          width: barWidth(Math.abs(slice.kg), maxDisposalKg),
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <div className="legend">
+                    {disposal.slices.map((slice) => (
+                      <span key={slice.id}>
+                        <b className={slice.id} />
+                        {slice.label} {formatKg(slice.kg)}
+                      </span>
+                    ))}
+                  </div>
+
                   <div className="lifetime">
                     <strong>
                       {formatKg(lifetimeKg)} over{" "}
                       {LIFETIME_KM.toLocaleString("en-CA")} km
                     </strong>
                     <span>
-                      {Math.round(buildShare * 100)}% from building the car,{" "}
-                      {formatKg(drivingLifetimeKg)} from driving
+                      {Math.round(buildShare * 100)}% from building and end of
+                      life, {formatKg(drivingLifetimeKg)} from driving
                     </span>
                     <div className="bar" aria-hidden="true">
                       <i
                         className="build"
                         style={{
-                          width: barWidth(manufacture.totalKg, maxLifeKg),
+                          width: barWidth(Math.max(vehicleCycleKg, 0), maxLifeKg),
                         }}
                       />
                       <i
@@ -306,10 +357,6 @@ export default function App() {
                         }}
                       />
                     </div>
-                  </div>
-
-                  <div className="later">
-                    <strong>End of life:</strong> not estimated yet
                   </div>
                 </article>
               );
@@ -326,7 +373,11 @@ export default function App() {
         use, or taken from the model name when it includes a pack size.
         Materials and factory grams are parametric GREET-style factors (steel,
         aluminum, copper, other materials, NMC or LFP pack, and a generic
-        assembly add-on), not a plant-specific LCA. Electricity: ECCC 2026
+        assembly add-on), not a plant-specific LCA. End of life assumes the
+        car is scrapped: steel, aluminum, and copper recovery, shredder
+        residue, and a default battery-recycle credit (smaller for LFP than
+        NMC). Canada has no national ELV law; second-life packs and export are
+        not modelled. Electricity: ECCC 2026
         provincial consumption intensities. Fuel production is a Canada-average
         well-to-tank estimate. Tailpipe grams per kilometre are NRCan’s
         published values. Heavy pickups above the EnerGuide test weight limit
