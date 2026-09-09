@@ -5,6 +5,7 @@ import {
   disposalEmissions,
   embodiedEmissions,
   LIFETIME_KM,
+  recyclingCaption,
   weightCaption,
 } from "./lib/embodied";
 import {
@@ -95,10 +96,9 @@ export default function App() {
   });
   const maxDriveG = Math.max(...results.map((row) => row.driving.totalGPerKm), 1);
   const maxBuildKg = Math.max(...results.map((row) => row.manufacture.totalKg), 1);
-  const maxDisposalKg = Math.max(
-    ...results.map((row) =>
-      row.disposal.slices.reduce((sum, slice) => sum + Math.abs(slice.kg), 0),
-    ),
+  const maxProcessKg = Math.max(...results.map((row) => row.disposal.processKg), 1);
+  const maxCreditKg = Math.max(
+    ...results.map((row) => Math.abs(row.disposal.creditKg)),
     1,
   );
   const maxLifeKg = Math.max(...results.map((row) => row.lifetimeKg), 1);
@@ -232,8 +232,8 @@ export default function App() {
                   <div className="stat">
                     {formatKg(driving.kgPerYear)}
                     <span>
-                      {formatGPerKm(driving.totalGPerKm)} while driving, including
-                      fuel and electricity production
+                      {formatGPerKm(driving.totalGPerKm)} CO₂e while driving,
+                      including fuel and electricity production
                     </span>
                   </div>
                   <div className="bar" aria-hidden="true">
@@ -281,7 +281,7 @@ export default function App() {
                   <div className="stat manufacture-stat">
                     {formatKg(manufacture.totalKg)}
                     <span>
-                      to build, {formatGPerKm(manufacture.gPerKm)} over{" "}
+                      CO₂e to build, {formatGPerKm(manufacture.gPerKm)} over{" "}
                       {LIFETIME_KM.toLocaleString("en-CA")} km
                     </span>
                   </div>
@@ -304,29 +304,55 @@ export default function App() {
                   </div>
 
                   <div className="stat manufacture-stat">
-                    {formatKg(disposal.netKg)}
+                    {formatKg(disposal.processKg)}
                     <span>
-                      {disposal.netKg < 0
-                        ? "recovered if recycled"
-                        : "to dispose"}
-                      , {formatGPerKm(disposal.gPerKm)} over{" "}
-                      {LIFETIME_KM.toLocaleString("en-CA")} km
+                      CO₂e to dispose, {formatGPerKm(disposal.processGPerKm)}{" "}
+                      over {LIFETIME_KM.toLocaleString("en-CA")} km
                     </span>
                   </div>
-                  <div className="result-meta">{disposalCaption(vehicle)}</div>
+                  <div className="result-meta">{disposalCaption()}</div>
                   <div className="bar" aria-hidden="true">
-                    {disposal.slices.map((slice) => (
+                    {disposal.processSlices.map((slice) => (
                       <i
                         key={slice.id}
                         className={slice.id}
                         style={{
-                          width: barWidth(Math.abs(slice.kg), maxDisposalKg),
+                          width: barWidth(slice.kg, maxProcessKg),
                         }}
                       />
                     ))}
                   </div>
                   <div className="legend">
-                    {disposal.slices.map((slice) => (
+                    {disposal.processSlices.map((slice) => (
+                      <span key={slice.id}>
+                        <b className={slice.id} />
+                        {slice.label} {formatKg(slice.kg)}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="stat manufacture-stat">
+                    {formatKg(disposal.creditKg)}
+                    <span>
+                      CO₂e recycling credit against the build,{" "}
+                      {formatGPerKm(disposal.creditGPerKm)} over{" "}
+                      {LIFETIME_KM.toLocaleString("en-CA")} km
+                    </span>
+                  </div>
+                  <div className="result-meta">{recyclingCaption(vehicle)}</div>
+                  <div className="bar" aria-hidden="true">
+                    {disposal.creditSlices.map((slice) => (
+                      <i
+                        key={slice.id}
+                        className={slice.id}
+                        style={{
+                          width: barWidth(Math.abs(slice.kg), maxCreditKg),
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <div className="legend">
+                    {disposal.creditSlices.map((slice) => (
                       <span key={slice.id}>
                         <b className={slice.id} />
                         {slice.label} {formatKg(slice.kg)}
@@ -336,12 +362,12 @@ export default function App() {
 
                   <div className="lifetime">
                     <strong>
-                      {formatKg(lifetimeKg)} over{" "}
+                      {formatKg(lifetimeKg)} CO₂e over{" "}
                       {LIFETIME_KM.toLocaleString("en-CA")} km
                     </strong>
                     <span>
-                      {Math.round(buildShare * 100)}% from building and end of
-                      life, {formatKg(drivingLifetimeKg)} from driving
+                      {Math.round(buildShare * 100)}% from the vehicle after
+                      recycling, {formatKg(drivingLifetimeKg)} from driving
                     </span>
                     <div className="bar" aria-hidden="true">
                       <i
@@ -373,11 +399,11 @@ export default function App() {
         use, or taken from the model name when it includes a pack size.
         Materials and factory grams are parametric GREET-style factors (steel,
         aluminum, copper, other materials, NMC or LFP pack, and a generic
-        assembly add-on), not a plant-specific LCA. End of life assumes the
-        car is scrapped: steel, aluminum, and copper recovery, shredder
-        residue, and a default battery-recycle credit (smaller for LFP than
-        NMC). Canada has no national ELV law; second-life packs and export are
-        not modelled. Electricity: ECCC 2026
+        assembly add-on), not a plant-specific LCA. Disposal is the cost of
+        shredding and residue. Recycling is a separate credit against the
+        build (steel, aluminum, copper, and a smaller pack credit for LFP
+        than NMC). Canada has no national ELV law; second-life packs and
+        export are not modelled. Electricity: ECCC 2026
         provincial consumption intensities. Fuel production is a Canada-average
         well-to-tank estimate. Tailpipe grams per kilometre are NRCan’s
         published values. Heavy pickups above the EnerGuide test weight limit
