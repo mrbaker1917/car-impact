@@ -9,6 +9,14 @@
   --tailpipe: #7c2d12;
   --fuel: #b45309;
   --electric: #1d4e4a;
+  --steel: #44403c;
+  --aluminum: #64748b;
+  --copper: #c2410c;
+  --other: #a8a29e;
+  --battery: #6d28d9;
+  --factory: #78716c;
+  --build: #292524;
+  --drive: #1d4e4a;
   --empty: #cfc6b6;
 }
 
@@ -244,6 +252,46 @@ select:focus {
   background: var(--electric);
 }
 
+.bar .steel,
+.legend .steel {
+  background: var(--steel);
+}
+
+.bar .aluminum,
+.legend .aluminum {
+  background: var(--aluminum);
+}
+
+.bar .copper,
+.legend .copper {
+  background: var(--copper);
+}
+
+.bar .other,
+.legend .other {
+  background: var(--other);
+}
+
+.bar .battery,
+.legend .battery {
+  background: var(--battery);
+}
+
+.bar .factory,
+.legend .factory {
+  background: var(--factory);
+}
+
+.bar .build,
+.legend .build {
+  background: var(--build);
+}
+
+.bar .drive,
+.legend .drive {
+  background: var(--drive);
+}
+
 .legend {
   display: flex;
   flex-wrap: wrap;
@@ -271,6 +319,29 @@ select:focus {
 
 .legend .electric {
   background: var(--electric);
+}
+
+.manufacture-stat {
+  border-top: 1px dashed var(--line);
+  padding-top: 0.85rem;
+  margin-top: 0.15rem;
+}
+
+.lifetime {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  border-top: 1px dashed var(--line);
+  padding-top: 0.85rem;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.lifetime strong {
+  color: var(--ink);
+  font-family: Fraunces, Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 650;
 }
 
 .later {

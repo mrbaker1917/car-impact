@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "csv-parse/sync";
+import { enrichVehicles } from "./cvs-join.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const nrcanDir = path.join(root, "data", "nrcan");
@@ -168,19 +169,29 @@ vehicles.sort(
     a.model.localeCompare(b.model),
 );
 
+const { vehicles: enriched, cvsCount } = await enrichVehicles(vehicles, root);
+
 await mkdir(path.join(root, "public"), { recursive: true });
 await writeFile(
   path.join(root, "public", "vehicles.json"),
-  JSON.stringify(vehicles),
+  JSON.stringify(enriched),
 );
 
-const counts = vehicles.reduce((acc, v) => {
+const counts = enriched.reduce((acc, v) => {
   acc[v.powertrain] = (acc[v.powertrain] ?? 0) + 1;
   return acc;
 }, {});
+const cvsWeights = enriched.filter((v) => v.weightSource === "cvs").length;
+const withPack = enriched.filter((v) => v.batteryKwh != null).length;
 
 console.log(
-  `Wrote ${vehicles.length} vehicles`,
+  `Wrote ${enriched.length} vehicles`,
   counts,
   `→ public/vehicles.json`,
 );
+console.log(
+  `Curb weight: ${cvsWeights} from CVS (${cvsCount} CVS rows), ${
+    enriched.length - cvsWeights
+  } class average`,
+);
+console.log(`Battery pack estimate: ${withPack} BEV/PHEV`);

@@ -1,4 +1,7 @@
 export type Powertrain = "ice" | "hybrid" | "phev" | "bev";
+export type WeightSource = "cvs" | "class";
+export type BatteryChemistry = "nmc" | "lfp";
+export type BatteryKwhSource = "name" | "range";
 
 export type Vehicle = {
   id: string;
@@ -17,6 +20,12 @@ export type Vehicle = {
   electricRangeKm: number | null;
   chargeSustainingLPer100: number | null;
   batteryKwhHint: number | null;
+  curbWeightKg: number;
+  weightSource: WeightSource;
+  weightYear: number | null;
+  batteryKwh: number | null;
+  batteryKwhSource: BatteryKwhSource | null;
+  batteryChemistry: BatteryChemistry | null;
 };
 
 export const POWERTRAIN_LABEL: Record<Powertrain, string> = {
