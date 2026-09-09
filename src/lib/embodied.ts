@@ -128,8 +128,13 @@ export type ManufactureBreakdown = {
   otherKg: number;
   batteryKg: number;
   factoryKg: number;
+  miningKg: number;
   totalKg: number;
+  miningGPerKm: number;
+  factoryGPerKm: number;
   gPerKm: number;
+  miningSlices: ManufactureSlice[];
+  factorySlices: ManufactureSlice[];
   slices: ManufactureSlice[];
 };
 
@@ -172,18 +177,24 @@ export function embodiedEmissions(vehicle: Vehicle): ManufactureBreakdown {
       ? bill.packKwh * BATTERY_KG_PER_KWH[bill.chemistry]
       : 0;
   const factoryKg = FACTORY_BASE_KG + FACTORY_PER_KG * vehicle.curbWeightKg;
-  const totalKg = steelKg + aluminumKg + copperKg + otherKg + batteryKg + factoryKg;
+  const miningKg = steelKg + aluminumKg + copperKg + otherKg + batteryKg;
+  const totalKg = miningKg + factoryKg;
 
-  const slices: ManufactureSlice[] = (
+  const miningSlices: ManufactureSlice[] = (
     [
       { id: "steel", label: "Steel", kg: steelKg },
       { id: "aluminum", label: "Aluminum", kg: aluminumKg },
       { id: "copper", label: "Copper", kg: copperKg },
       { id: "other", label: "Other materials", kg: otherKg },
       { id: "battery", label: "Battery metals", kg: batteryKg },
-      { id: "factory", label: "Factory", kg: factoryKg },
     ] as const
   ).filter((slice) => slice.kg >= 1);
+
+  const factorySlices: ManufactureSlice[] = (
+    [{ id: "factory", label: "Factory", kg: factoryKg }] as const
+  ).filter((slice) => slice.kg >= 1);
+
+  const slices = [...miningSlices, ...factorySlices];
 
   return {
     curbWeightKg: vehicle.curbWeightKg,
@@ -197,8 +208,13 @@ export function embodiedEmissions(vehicle: Vehicle): ManufactureBreakdown {
     otherKg,
     batteryKg,
     factoryKg,
+    miningKg,
     totalKg,
+    miningGPerKm: (miningKg * 1000) / LIFETIME_KM,
+    factoryGPerKm: (factoryKg * 1000) / LIFETIME_KM,
     gPerKm: (totalKg * 1000) / LIFETIME_KM,
+    miningSlices,
+    factorySlices,
     slices,
   };
 }
