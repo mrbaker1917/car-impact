@@ -339,18 +339,36 @@ select:focus {
   background: var(--electric);
 }
 
-.manufacture-stat {
+.stage {
   border-top: 1px dashed var(--line);
-  padding-top: 0.85rem;
-  margin-top: 0.15rem;
+  padding-top: 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.stage-title {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.stage-kicker {
+  margin: 0.35rem 0 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .lifetime {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  border-top: 1px dashed var(--line);
-  padding-top: 0.85rem;
   font-size: 0.92rem;
   color: var(--muted);
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
 import {
   batteryCaption,
   disposalCaption,
@@ -30,6 +30,15 @@ function vehicleLabel(vehicle: Vehicle): string {
 
 function barWidth(value: number, max: number): string {
   return `${max > 0 ? (value / max) * 100 : 0}%`;
+}
+
+function Stage({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="stage">
+      <h3 className="stage-title">{title}</h3>
+      {children}
+    </section>
+  );
 }
 
 export default function App() {
@@ -95,7 +104,8 @@ export default function App() {
     };
   });
   const maxDriveG = Math.max(...results.map((row) => row.driving.totalGPerKm), 1);
-  const maxBuildKg = Math.max(...results.map((row) => row.manufacture.totalKg), 1);
+  const maxMiningKg = Math.max(...results.map((row) => row.manufacture.miningKg), 1);
+  const maxFactoryKg = Math.max(...results.map((row) => row.manufacture.factoryKg), 1);
   const maxProcessKg = Math.max(...results.map((row) => row.disposal.processKg), 1);
   const maxCreditKg = Math.max(
     ...results.map((row) => Math.abs(row.disposal.creditKg)),
@@ -229,161 +239,197 @@ export default function App() {
                     {pack ? ` · ${pack}` : ""}
                   </div>
 
-                  <div className="stat">
-                    {formatKg(driving.kgPerYear)}
-                    <span>
-                      {formatGPerKm(driving.totalGPerKm)} CO₂e while driving,
-                      including fuel and electricity production
-                    </span>
-                  </div>
-                  <div className="bar" aria-hidden="true">
-                    <i
-                      className="tailpipe"
-                      style={{
-                        width: barWidth(driving.tailpipeGPerKm, maxDriveG),
-                      }}
-                    />
-                    <i
-                      className="fuel"
-                      style={{
-                        width: barWidth(driving.fuelProductionGPerKm, maxDriveG),
-                      }}
-                    />
-                    <i
-                      className="electric"
-                      style={{
-                        width: barWidth(driving.electricityGPerKm, maxDriveG),
-                      }}
-                    />
-                  </div>
-                  <div className="legend">
-                    <span>
-                      <b className="tailpipe" />
-                      Tailpipe {formatGPerKm(driving.tailpipeGPerKm)}
-                    </span>
-                    <span>
-                      <b className="fuel" />
-                      Fuel production {formatGPerKm(driving.fuelProductionGPerKm)}
-                    </span>
-                    <span>
-                      <b className="electric" />
-                      Electricity {formatGPerKm(driving.electricityGPerKm)}
-                    </span>
-                  </div>
-                  {driving.utilityFactor != null && (
-                    <div className="result-meta">
-                      About {Math.round(driving.utilityFactor * 100)}% of
-                      kilometres assumed on electricity, from NRCan’s plug-in
-                      rating.
+                  <Stage title="Mining">
+                    <div className="stat">
+                      {formatKg(manufacture.miningKg)}
+                      <span>
+                        CO₂e from materials, {formatGPerKm(manufacture.miningGPerKm)}{" "}
+                        over {LIFETIME_KM.toLocaleString("en-CA")} km
+                      </span>
                     </div>
-                  )}
+                    <div className="bar" aria-hidden="true">
+                      {manufacture.miningSlices.map((slice) => (
+                        <i
+                          key={slice.id}
+                          className={slice.id}
+                          style={{ width: barWidth(slice.kg, maxMiningKg) }}
+                        />
+                      ))}
+                    </div>
+                    <div className="legend">
+                      {manufacture.miningSlices.map((slice) => (
+                        <span key={slice.id}>
+                          <b className={slice.id} />
+                          {slice.label} {formatKg(slice.kg)}
+                        </span>
+                      ))}
+                    </div>
+                  </Stage>
 
-                  <div className="stat manufacture-stat">
-                    {formatKg(manufacture.totalKg)}
-                    <span>
-                      CO₂e to build, {formatGPerKm(manufacture.gPerKm)} over{" "}
-                      {LIFETIME_KM.toLocaleString("en-CA")} km
-                    </span>
-                  </div>
-                  <div className="bar" aria-hidden="true">
-                    {manufacture.slices.map((slice) => (
-                      <i
-                        key={slice.id}
-                        className={slice.id}
-                        style={{ width: barWidth(slice.kg, maxBuildKg) }}
-                      />
-                    ))}
-                  </div>
-                  <div className="legend">
-                    {manufacture.slices.map((slice) => (
-                      <span key={slice.id}>
-                        <b className={slice.id} />
-                        {slice.label} {formatKg(slice.kg)}
+                  <Stage title="Building">
+                    <div className="stat">
+                      {formatKg(manufacture.factoryKg)}
+                      <span>
+                        CO₂e from the factory,{" "}
+                        {formatGPerKm(manufacture.factoryGPerKm)} over{" "}
+                        {LIFETIME_KM.toLocaleString("en-CA")} km
                       </span>
-                    ))}
-                  </div>
+                    </div>
+                    <div className="bar" aria-hidden="true">
+                      {manufacture.factorySlices.map((slice) => (
+                        <i
+                          key={slice.id}
+                          className={slice.id}
+                          style={{ width: barWidth(slice.kg, maxFactoryKg) }}
+                        />
+                      ))}
+                    </div>
+                    <div className="legend">
+                      {manufacture.factorySlices.map((slice) => (
+                        <span key={slice.id}>
+                          <b className={slice.id} />
+                          {slice.label} {formatKg(slice.kg)}
+                        </span>
+                      ))}
+                    </div>
+                  </Stage>
 
-                  <div className="stat manufacture-stat">
-                    {formatKg(disposal.processKg)}
-                    <span>
-                      CO₂e to dispose, {formatGPerKm(disposal.processGPerKm)}{" "}
-                      over {LIFETIME_KM.toLocaleString("en-CA")} km
-                    </span>
-                  </div>
-                  <div className="result-meta">{disposalCaption()}</div>
-                  <div className="bar" aria-hidden="true">
-                    {disposal.processSlices.map((slice) => (
-                      <i
-                        key={slice.id}
-                        className={slice.id}
-                        style={{
-                          width: barWidth(slice.kg, maxProcessKg),
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <div className="legend">
-                    {disposal.processSlices.map((slice) => (
-                      <span key={slice.id}>
-                        <b className={slice.id} />
-                        {slice.label} {formatKg(slice.kg)}
+                  <Stage title="Operation">
+                    <div className="stat">
+                      {formatKg(driving.kgPerYear)}
+                      <span>
+                        CO₂e this year, {formatGPerKm(driving.totalGPerKm)} while
+                        driving, including fuel and electricity production
                       </span>
-                    ))}
-                  </div>
-
-                  <div className="stat manufacture-stat">
-                    {formatKg(disposal.creditKg)}
-                    <span>
-                      CO₂e recycling credit against the build,{" "}
-                      {formatGPerKm(disposal.creditGPerKm)} over{" "}
-                      {LIFETIME_KM.toLocaleString("en-CA")} km
-                    </span>
-                  </div>
-                  <div className="result-meta">{recyclingCaption(vehicle)}</div>
-                  <div className="bar" aria-hidden="true">
-                    {disposal.creditSlices.map((slice) => (
-                      <i
-                        key={slice.id}
-                        className={slice.id}
-                        style={{
-                          width: barWidth(Math.abs(slice.kg), maxCreditKg),
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <div className="legend">
-                    {disposal.creditSlices.map((slice) => (
-                      <span key={slice.id}>
-                        <b className={slice.id} />
-                        {slice.label} {formatKg(slice.kg)}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="lifetime">
-                    <strong>
-                      {formatKg(lifetimeKg)} CO₂e over{" "}
-                      {LIFETIME_KM.toLocaleString("en-CA")} km
-                    </strong>
-                    <span>
-                      {Math.round(buildShare * 100)}% from the vehicle after
-                      recycling, {formatKg(drivingLifetimeKg)} from driving
-                    </span>
+                    </div>
                     <div className="bar" aria-hidden="true">
                       <i
-                        className="build"
+                        className="tailpipe"
                         style={{
-                          width: barWidth(Math.max(vehicleCycleKg, 0), maxLifeKg),
+                          width: barWidth(driving.tailpipeGPerKm, maxDriveG),
                         }}
                       />
                       <i
-                        className="drive"
+                        className="fuel"
                         style={{
-                          width: barWidth(drivingLifetimeKg, maxLifeKg),
+                          width: barWidth(driving.fuelProductionGPerKm, maxDriveG),
+                        }}
+                      />
+                      <i
+                        className="electric"
+                        style={{
+                          width: barWidth(driving.electricityGPerKm, maxDriveG),
                         }}
                       />
                     </div>
-                  </div>
+                    <div className="legend">
+                      <span>
+                        <b className="tailpipe" />
+                        Tailpipe {formatGPerKm(driving.tailpipeGPerKm)}
+                      </span>
+                      <span>
+                        <b className="fuel" />
+                        Fuel production {formatGPerKm(driving.fuelProductionGPerKm)}
+                      </span>
+                      <span>
+                        <b className="electric" />
+                        Electricity {formatGPerKm(driving.electricityGPerKm)}
+                      </span>
+                    </div>
+                    {driving.utilityFactor != null && (
+                      <div className="result-meta">
+                        About {Math.round(driving.utilityFactor * 100)}% of
+                        kilometres assumed on electricity, from NRCan’s plug-in
+                        rating.
+                      </div>
+                    )}
+                  </Stage>
+
+                  <Stage title="Disposal">
+                    <div className="stat">
+                      {formatKg(disposal.processKg)}
+                      <span>
+                        CO₂e to dispose, {formatGPerKm(disposal.processGPerKm)}{" "}
+                        over {LIFETIME_KM.toLocaleString("en-CA")} km
+                      </span>
+                    </div>
+                    <div className="result-meta">{disposalCaption()}</div>
+                    <div className="bar" aria-hidden="true">
+                      {disposal.processSlices.map((slice) => (
+                        <i
+                          key={slice.id}
+                          className={slice.id}
+                          style={{
+                            width: barWidth(slice.kg, maxProcessKg),
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div className="legend">
+                      {disposal.processSlices.map((slice) => (
+                        <span key={slice.id}>
+                          <b className={slice.id} />
+                          {slice.label} {formatKg(slice.kg)}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="stage-kicker">Recycling credit</p>
+                    <div className="stat">
+                      {formatKg(disposal.creditKg)}
+                      <span>
+                        CO₂e offset against mining,{" "}
+                        {formatGPerKm(disposal.creditGPerKm)} over{" "}
+                        {LIFETIME_KM.toLocaleString("en-CA")} km
+                      </span>
+                    </div>
+                    <div className="result-meta">{recyclingCaption(vehicle)}</div>
+                    <div className="bar" aria-hidden="true">
+                      {disposal.creditSlices.map((slice) => (
+                        <i
+                          key={slice.id}
+                          className={slice.id}
+                          style={{
+                            width: barWidth(Math.abs(slice.kg), maxCreditKg),
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div className="legend">
+                      {disposal.creditSlices.map((slice) => (
+                        <span key={slice.id}>
+                          <b className={slice.id} />
+                          {slice.label} {formatKg(slice.kg)}
+                        </span>
+                      ))}
+                    </div>
+                  </Stage>
+
+                  <Stage title="Whole life">
+                    <div className="lifetime">
+                      <strong>
+                        {formatKg(lifetimeKg)} CO₂e over{" "}
+                        {LIFETIME_KM.toLocaleString("en-CA")} km
+                      </strong>
+                      <span>
+                        {Math.round(buildShare * 100)}% from the vehicle after
+                        recycling, {formatKg(drivingLifetimeKg)} from driving
+                      </span>
+                      <div className="bar" aria-hidden="true">
+                        <i
+                          className="build"
+                          style={{
+                            width: barWidth(Math.max(vehicleCycleKg, 0), maxLifeKg),
+                          }}
+                        />
+                        <i
+                          className="drive"
+                          style={{
+                            width: barWidth(drivingLifetimeKg, maxLifeKg),
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </Stage>
                 </article>
               );
             },
