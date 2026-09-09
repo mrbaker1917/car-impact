@@ -103,6 +103,19 @@ export type DisposalSlice = {
   kg: number;
 };
 
+export type DisposalBreakdown = {
+  scrapKg: number;
+  batteryKg: number;
+  processKg: number;
+  creditKg: number;
+  netKg: number;
+  processGPerKm: number;
+  creditGPerKm: number;
+  gPerKm: number;
+  processSlices: DisposalSlice[];
+  creditSlices: DisposalSlice[];
+};
+
 export type ManufactureBreakdown = {
   curbWeightKg: number;
   weightSource: Vehicle["weightSource"];
@@ -118,15 +131,6 @@ export type ManufactureBreakdown = {
   totalKg: number;
   gPerKm: number;
   slices: ManufactureSlice[];
-};
-
-export type DisposalBreakdown = {
-  scrapKg: number;
-  batteryKg: number;
-  processKg: number;
-  netKg: number;
-  gPerKm: number;
-  slices: DisposalSlice[];
 };
 
 type MaterialBill = {
@@ -216,12 +220,16 @@ export function disposalEmissions(vehicle: Vehicle): DisposalBreakdown {
       ? -(bill.packKwh * BATTERY_RECYCLE_CREDIT[bill.chemistry])
       : 0;
   const netKg = scrapKg + batteryKg + processKg;
+  const creditKg = scrapKg + batteryKg;
 
-  const slices: DisposalSlice[] = (
+  const processSlices: DisposalSlice[] = (
+    [{ id: "process", label: "Shredding and residue", kg: processKg }] as const
+  ).filter((slice) => slice.kg >= 1);
+
+  const creditSlices: DisposalSlice[] = (
     [
       { id: "scrap", label: "Scrap metals", kg: scrapKg },
       { id: "batteryRecycle", label: "Battery recycle", kg: batteryKg },
-      { id: "process", label: "Shredding and residue", kg: processKg },
     ] as const
   ).filter((slice) => Math.abs(slice.kg) >= 1);
 
@@ -229,9 +237,13 @@ export function disposalEmissions(vehicle: Vehicle): DisposalBreakdown {
     scrapKg,
     batteryKg,
     processKg,
+    creditKg,
     netKg,
+    processGPerKm: (processKg * 1000) / LIFETIME_KM,
+    creditGPerKm: (creditKg * 1000) / LIFETIME_KM,
     gPerKm: (netKg * 1000) / LIFETIME_KM,
-    slices,
+    processSlices,
+    creditSlices,
   };
 }
 
@@ -256,9 +268,13 @@ export function batteryCaption(vehicle: Vehicle): string | null {
   return `~${vehicle.batteryKwh} kWh pack, ${assumed}`;
 }
 
-export function disposalCaption(vehicle: Vehicle): string {
+export function disposalCaption(): string {
+  return "shredding, transport, and leftover shredder residue";
+}
+
+export function recyclingCaption(vehicle: Vehicle): string {
   if (vehicle.powertrain === "bev" || vehicle.powertrain === "phev") {
-    return "assumed scrapped; pack recycled, not reused";
+    return "scrap metals and pack recycle, not second life — offsets the build";
   }
-  return "assumed scrapped and shredded";
+  return "scrap steel, aluminum, and copper — offsets the build";
 }
