@@ -32,9 +32,17 @@ function barWidth(value: number, max: number): string {
   return `${max > 0 ? (value / max) * 100 : 0}%`;
 }
 
-function Stage({ title, children }: { title: string; children: ReactNode }) {
+function Stage({
+  title,
+  featured,
+  children,
+}: {
+  title: string;
+  featured?: boolean;
+  children: ReactNode;
+}) {
   return (
-    <section className="stage">
+    <section className={featured ? "stage featured" : "stage"}>
       <h3 className="stage-title">{title}</h3>
       {children}
     </section>
@@ -239,6 +247,43 @@ export default function App() {
                     {pack ? ` · ${pack}` : ""}
                   </div>
 
+                  <Stage featured title="Total emissions over the car's life">
+                    <div className="stat">
+                      {formatKg(lifetimeKg)}
+                      <span>
+                        CO₂e over {LIFETIME_KM.toLocaleString("en-CA")} km
+                      </span>
+                    </div>
+                    <div className="bar" aria-hidden="true">
+                      <i
+                        className="build"
+                        style={{
+                          width: barWidth(Math.max(vehicleCycleKg, 0), maxLifeKg),
+                        }}
+                      />
+                      <i
+                        className="drive"
+                        style={{
+                          width: barWidth(drivingLifetimeKg, maxLifeKg),
+                        }}
+                      />
+                    </div>
+                    <div className="legend">
+                      <span>
+                        <b className="build" />
+                        Vehicle after recycling {formatKg(vehicleCycleKg)}
+                      </span>
+                      <span>
+                        <b className="drive" />
+                        Driving {formatKg(drivingLifetimeKg)}
+                      </span>
+                    </div>
+                    <div className="result-meta">
+                      {Math.round(buildShare * 100)}% from building and
+                      disposing of the car, after recycling
+                    </div>
+                  </Stage>
+
                   <Stage title="Mining">
                     <div className="stat">
                       {formatKg(manufacture.miningKg)}
@@ -401,33 +446,6 @@ export default function App() {
                           {slice.label} {formatKg(slice.kg)}
                         </span>
                       ))}
-                    </div>
-                  </Stage>
-
-                  <Stage title="Whole life">
-                    <div className="lifetime">
-                      <strong>
-                        {formatKg(lifetimeKg)} CO₂e over{" "}
-                        {LIFETIME_KM.toLocaleString("en-CA")} km
-                      </strong>
-                      <span>
-                        {Math.round(buildShare * 100)}% from the vehicle after
-                        recycling, {formatKg(drivingLifetimeKg)} from driving
-                      </span>
-                      <div className="bar" aria-hidden="true">
-                        <i
-                          className="build"
-                          style={{
-                            width: barWidth(Math.max(vehicleCycleKg, 0), maxLifeKg),
-                          }}
-                        />
-                        <i
-                          className="drive"
-                          style={{
-                            width: barWidth(drivingLifetimeKg, maxLifeKg),
-                          }}
-                        />
-                      </div>
                     </div>
                   </Stage>
                 </article>
