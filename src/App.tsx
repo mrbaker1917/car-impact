@@ -19,6 +19,7 @@ import {
   PROVINCES,
   type ProvinceCode,
 } from "./lib/provinces";
+import { loadCatalogue } from "./lib/catalogue";
 import { searchVehicles } from "./lib/search";
 import { fuelLabel, type Vehicle } from "./types";
 
@@ -59,11 +60,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/vehicles.json")
-      .then((res) => {
-        if (!res.ok) throw new Error("Could not load vehicle catalogue");
-        return res.json();
-      })
+    loadCatalogue()
       .then(setVehicles)
       .catch((err: Error) => setError(err.message));
   }, []);
