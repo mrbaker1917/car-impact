@@ -181,6 +181,31 @@ select:focus {
   font-style: italic;
 }
 
+.share-link {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.35rem 0.2rem;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.share-link:hover {
+  color: var(--ink);
+}
+
+.insight {
+  margin: 0 0 1.15rem;
+  max-width: 46rem;
+  font-size: 1.12rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
 .compare {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

@@ -1,0 +1,19 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Existing files in dist (including /vehicles.json) win over this rule.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# The app pins this file by SHA-256. A long CDN cache would 404 the catalogue
+# after a deploy until the hash in the new JS matched the old JSON.
+[[headers]]
+  for = "/vehicles.json"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
