@@ -13,17 +13,22 @@ import {
   formatGPerKm,
   formatKg,
 } from "./lib/emissions";
+import { compareInsight } from "./lib/insight";
 import {
   DEFAULT_KM_PER_YEAR,
-  DEFAULT_PROVINCE,
   PROVINCES,
+  provinceByCode,
   type ProvinceCode,
 } from "./lib/provinces";
 import { loadCatalogue } from "./lib/catalogue";
 import { searchVehicles } from "./lib/search";
+import { parseShare, writeShare } from "./lib/share";
 import { fuelLabel, type Vehicle } from "./types";
 
 const MAX_PICKS = 3;
+const initialShare = parseShare(
+  typeof window === "undefined" ? "" : window.location.search,
+);
 
 function vehicleLabel(vehicle: Vehicle): string {
   return `${vehicle.year} ${vehicle.make} ${vehicle.model}`;
@@ -54,16 +59,38 @@ export default function App() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [query, setQuery] = useState("");
   const [picks, setPicks] = useState<Vehicle[]>([]);
-  const [province, setProvince] = useState<ProvinceCode>(DEFAULT_PROVINCE);
-  const [kmPerYear, setKmPerYear] = useState(DEFAULT_KM_PER_YEAR);
+  const [province, setProvince] = useState<ProvinceCode>(initialShare.province);
+  const [kmPerYear, setKmPerYear] = useState(initialShare.kmPerYear);
   const [activeIndex, setActiveIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [catalogueReady, setCatalogueReady] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     loadCatalogue()
-      .then(setVehicles)
-      .catch((err: Error) => setError(err.message));
+      .then((list) => {
+        setVehicles(list);
+        const byId = new Map(list.map((vehicle) => [vehicle.id, vehicle]));
+        const restored = initialShare.ids
+          .map((id) => byId.get(id))
+          .filter((vehicle): vehicle is Vehicle => vehicle != null);
+        if (restored.length) setPicks(restored);
+        setCatalogueReady(true);
+      })
+      .catch((err: Error) => {
+        setError(err.message);
+        setCatalogueReady(true);
+      });
   }, []);
+
+  useEffect(() => {
+    if (!catalogueReady) return;
+    writeShare({
+      ids: picks.map((vehicle) => vehicle.id),
+      province,
+      kmPerYear,
+    });
+  }, [catalogueReady, picks, province, kmPerYear]);
 
   const matches = useMemo(
     () => searchVehicles(vehicles, query),
@@ -77,6 +104,21 @@ export default function App() {
       return [...current, vehicle];
     });
     setQuery("");
+  }
+
+  function copyShare() {
+    const href = writeShare({
+      ids: picks.map((vehicle) => vehicle.id),
+      province,
+      kmPerYear,
+    });
+    void navigator.clipboard.writeText(href).then(
+      () => {
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 2000);
+      },
+      () => {},
+    );
   }
 
   function onSearchKey(event: KeyboardEvent<HTMLInputElement>) {
@@ -117,6 +159,13 @@ export default function App() {
     1,
   );
   const maxLifeKg = Math.max(...results.map((row) => row.lifetimeKg), 1);
+  const insight = compareInsight(
+    results.map((row) => ({
+      label: vehicleLabel(row.vehicle),
+      lifetimeKg: row.lifetimeKg,
+    })),
+    provinceByCode(province).name,
+  );
 
   return (
     <main className="page">
@@ -196,7 +245,10 @@ export default function App() {
       </div>
 
       <div className="picks">
-        {picks.length === 0 && (
+        {!catalogueReady && (
+          <span className="empty-picks">Loading the vehicle catalogue…</span>
+        )}
+        {catalogueReady && picks.length === 0 && (
           <span className="empty-picks">
             Add up to three cars to compare.
           </span>
@@ -217,9 +269,20 @@ export default function App() {
             </button>
           </span>
         ))}
+        {picks.length > 0 && (
+          <button type="button" className="share-link" onClick={copyShare}>
+            {copied ? "Copied link" : "Copy link"}
+          </button>
+        )}
       </div>
 
       {error && <p className="note">{error}</p>}
+
+      {insight && (
+        <p className="insight" aria-live="polite">
+          {insight}
+        </p>
+      )}
 
       {results.length > 0 && (
         <section className="compare">
