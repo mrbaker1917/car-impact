@@ -169,7 +169,7 @@ export default function App() {
   return (
     <main className="page">
       <header className="masthead">
-        <h1>Cars Environmental Impact</h1>
+        <h1>Environmental Impact of Cars</h1>
         <p className="lede">
           Compare mining, factory, driving, and end-of-life emissions for cars
           sold in Canada. Switch province to see how the grid changes the rest

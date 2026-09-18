@@ -3,9 +3,9 @@ import { NavLink } from "./NavLink";
 
 export default function Details() {
   useEffect(() => {
-    document.title = "Details — Car impact — Canada";
+    document.title = "Details — Environmental Impact of Cars — Canada";
     return () => {
-      document.title = "Car impact — Canada";
+      document.title = "Environmental Impact of Cars — Canada";
     };
   }, []);
 

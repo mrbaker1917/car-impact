@@ -1,6 +1,6 @@
-# Cars Environmental Impact
+# Environmental Impact of Cars
 
-A Canada-first comparison of **full-lifecycle greenhouse gases** for cars sold here: mining and materials, factory assembly, driving, disposal, and a separate recycling credit.
+A Canada-first comparison of **full-lifecycle greenhouse gas emmissions** for cars sold in Canada: mining and materials, factory assembly, driving, disposal, and a separate recycling credit.
 
 Search any make, model, or year in the EnerGuide catalogue (1995–2026), compare up to three cars, and switch **province** to see how the electricity grid changes the story. Shared links keep the cars, province, and kilometres per year in the URL.
 
@@ -19,11 +19,13 @@ That rebuilds `public/vehicles.json` from the CSVs in `data/nrcan/` and `data/cv
 
 Other scripts:
 
-| Command | What it does |
-| --- | --- |
-| `npm run data` | Rebuild the vehicle catalogue and its SHA-256 pin |
-| `npm run build` | Catalogue + typecheck + production bundle in `dist/` |
-| `npm run preview` | Serve the production bundle locally |
+
+| Command           | What it does                                         |
+| ----------------- | ---------------------------------------------------- |
+| `npm run data`    | Rebuild the vehicle catalogue and its SHA-256 pin    |
+| `npm run build`   | Catalogue + typecheck + production bundle in `dist/` |
+| `npm run preview` | Serve the production bundle locally                  |
+
 
 The generated catalogue is gitignored. A production host (for example Netlify) should run `npm run build` so the JSON is created on the server. `netlify.toml` already sets that up.
 
@@ -37,9 +39,9 @@ Each car has the same stages, in this order:
 4. **Operation** — **this year’s** driving at the km/year you set (default 20,000), including tailpipe, fuel production, and electricity.
 5. **Disposal** — shredding and residue as a **cost**, then **Recycling credit** as a separate offset against the build.
 
-With two or three cars, a sentence above the cards states the lifetime comparison in the selected province (for example that an EV is about a quarter of a hybrid in Ontario, and about half in Alberta).
+With two or three cars, a sentence above the cards states the lifetime comparison in the selected province (for example that an EV has about a quarter the emmissions of a hybrid in Ontario, and about half in Alberta).
 
-Lifetime totals use 250,000 km so one-time stages can sit next to driving. That distance does **not** change when you change km/year; km/year only changes the Operation line.
+Lifetime totals use 250,000 km, so one-time stages can sit next to driving. That distance does **not** change when you change km/year; km/year only changes the Operation line.
 
 ## Data sources
 
