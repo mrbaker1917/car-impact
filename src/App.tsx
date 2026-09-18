@@ -23,7 +23,7 @@ import {
 import { loadCatalogue } from "./lib/catalogue";
 import { searchVehicles } from "./lib/search";
 import { parseShare, writeShare } from "./lib/share";
-import { NavLink } from "./NavLink";
+import { NavLink, SiteLink } from "./NavLink";
 import { fuelLabel, type Vehicle } from "./types";
 
 const MAX_PICKS = 3;
@@ -179,6 +179,7 @@ export default function App() {
           <NavLink to="/details" className="text-link">
             Details
           </NavLink>
+          <SiteLink className="text-link" />
         </p>
       </header>
 

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { NavLink } from "./NavLink";
+import { NavLink, SiteLink } from "./NavLink";
 
 export default function Details() {
   useEffect(() => {
@@ -16,6 +16,7 @@ export default function Details() {
           <NavLink to="/" className="text-link">
             Compare cars
           </NavLink>
+          <SiteLink className="text-link" />
         </p>
         <h1>Details</h1>
         <p className="lede">

@@ -31,3 +31,17 @@ export function NavLink({
     </a>
   );
 }
+
+export function SiteLink({ className }: { className?: string }) {
+  return (
+    <a
+      className={className}
+      href="https://mrbaker1917.com"
+      target="_blank"
+      rel="noreferrer"
+      title="Click the link to visit author's site."
+    >
+      site's author
+    </a>
+  );
+}
