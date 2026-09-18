@@ -23,12 +23,10 @@ import {
 import { loadCatalogue } from "./lib/catalogue";
 import { searchVehicles } from "./lib/search";
 import { parseShare, writeShare } from "./lib/share";
+import { NavLink } from "./NavLink";
 import { fuelLabel, type Vehicle } from "./types";
 
 const MAX_PICKS = 3;
-const initialShare = parseShare(
-  typeof window === "undefined" ? "" : window.location.search,
-);
 
 function vehicleLabel(vehicle: Vehicle): string {
   return `${vehicle.year} ${vehicle.make} ${vehicle.model}`;
@@ -56,6 +54,7 @@ function Stage({
 }
 
 export default function App() {
+  const initialShare = parseShare(window.location.search);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [query, setQuery] = useState("");
   const [picks, setPicks] = useState<Vehicle[]>([]);
@@ -175,6 +174,11 @@ export default function App() {
           Compare mining, factory, driving, and end-of-life emissions for cars
           sold in Canada. Switch province to see how the grid changes the rest
           of the story.
+        </p>
+        <p className="masthead-links">
+          <NavLink to="/details" className="text-link">
+            Details
+          </NavLink>
         </p>
       </header>
 
@@ -531,7 +535,10 @@ export default function App() {
         provincial consumption intensities. Fuel production is a Canada-average
         well-to-tank estimate. Tailpipe grams per kilometre are NRCan’s
         published values. Heavy pickups above the EnerGuide test weight limit
-        are absent.
+        are absent.{" "}
+        <NavLink to="/details" className="text-link">
+          Details
+        </NavLink>
       </p>
     </main>
   );

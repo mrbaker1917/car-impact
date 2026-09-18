@@ -63,7 +63,79 @@ body {
   color: var(--muted);
   font-size: 1.08rem;
   line-height: 1.45;
+  margin: 0 0 0.75rem;
+}
+
+.masthead-links {
   margin: 0 0 2rem;
+}
+
+.text-link {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.text-link:hover {
+  color: var(--ink);
+}
+
+.doc-body {
+  max-width: 46rem;
+}
+
+.doc-body h2 {
+  font-family: Fraunces, Georgia, serif;
+  font-weight: 650;
+  font-size: 1.55rem;
+  letter-spacing: -0.02em;
+  margin: 2.1rem 0 0.7rem;
+}
+
+.doc-body h3 {
+  font-family: Fraunces, Georgia, serif;
+  font-weight: 650;
+  font-size: 1.15rem;
+  margin: 1.5rem 0 0.45rem;
+}
+
+.doc-body p,
+.doc-body li {
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.5;
+}
+
+.doc-body p {
+  margin: 0 0 0.9rem;
+}
+
+.doc-body ol,
+.doc-body ul {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+}
+
+.doc-body li {
+  margin: 0 0 0.45rem;
+}
+
+.doc-body li strong {
+  color: var(--ink);
+}
+
+.doc-body a {
+  color: var(--accent);
+}
+
+.doc-body a:hover {
+  color: var(--ink);
+}
+
+.doc-body code {
+  font-size: 0.9em;
+  color: var(--ink);
 }
 
 .controls {
