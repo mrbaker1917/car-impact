@@ -23,6 +23,8 @@ import {
 import { loadCatalogue } from "./lib/catalogue";
 import { searchVehicles } from "./lib/search";
 import { parseShare, writeShare } from "./lib/share";
+import { resolveStarterPair, STARTER_PAIR } from "./lib/starters";
+import { CompareStrip } from "./CompareStrip";
 import { NavLink, SiteLink } from "./NavLink";
 import { fuelLabel, type Vehicle } from "./types";
 
@@ -165,6 +167,7 @@ export default function App() {
     })),
     provinceByCode(province).name,
   );
+  const starterPair = catalogueReady ? resolveStarterPair(vehicles) : null;
 
   return (
     <main className="page">
@@ -249,44 +252,59 @@ export default function App() {
         </label>
       </div>
 
-      <div className="picks">
-        {!catalogueReady && (
-          <span className="empty-picks">Loading the vehicle catalogue…</span>
-        )}
-        {catalogueReady && picks.length === 0 && (
-          <span className="empty-picks">
-            Add up to three cars to compare.
-          </span>
-        )}
-        {picks.map((vehicle) => (
-          <span className="chip" key={vehicle.id}>
-            {vehicleLabel(vehicle)}
+      {catalogueReady && picks.length === 0 && (
+        <div className="empty-state">
+          <p>Add up to three cars to compare. Search above, or start here:</p>
+          {starterPair && (
             <button
               type="button"
-              aria-label={`Remove ${vehicleLabel(vehicle)}`}
-              onClick={() =>
-                setPicks((current) =>
-                  current.filter((item) => item.id !== vehicle.id),
-                )
-              }
+              className="starter"
+              onClick={() => setPicks(starterPair)}
             >
-              ×
+              <span className="starter-title">{STARTER_PAIR.label}</span>
+              <span className="starter-meta">{STARTER_PAIR.detail}</span>
             </button>
-          </span>
-        ))}
-        {picks.length > 0 && (
-          <button type="button" className="share-link" onClick={copyShare}>
-            {copied ? "Copied link" : "Copy link"}
-          </button>
-        )}
-      </div>
+          )}
+        </div>
+      )}
+
+      {(!catalogueReady || picks.length > 0) && (
+        <div className="picks">
+          {!catalogueReady && (
+            <span className="empty-picks">Loading the vehicle catalogue…</span>
+          )}
+          {picks.map((vehicle) => (
+            <span className="chip" key={vehicle.id}>
+              {vehicleLabel(vehicle)}
+              <button
+                type="button"
+                aria-label={`Remove ${vehicleLabel(vehicle)}`}
+                onClick={() =>
+                  setPicks((current) =>
+                    current.filter((item) => item.id !== vehicle.id),
+                  )
+                }
+              >
+                ×
+              </button>
+            </span>
+          ))}
+          {picks.length > 0 && (
+            <button type="button" className="share-link" onClick={copyShare}>
+              {copied ? "Copied link" : "Copy link"}
+            </button>
+          )}
+        </div>
+      )}
 
       {error && <p className="note">{error}</p>}
 
-      {insight && (
-        <p className="insight" aria-live="polite">
-          {insight}
-        </p>
+      {results.length > 0 && (
+        <CompareStrip
+          rows={results}
+          maxLifeKg={maxLifeKg}
+          insight={insight}
+        />
       )}
 
       {results.length > 0 && (
@@ -520,27 +538,29 @@ export default function App() {
         </section>
       )}
 
-      <p className="note">
-        Vehicle list and consumption: Natural Resources Canada EnerGuide
-        ratings (1995–2026). Curb weight: Transport Canada Canadian Vehicle
-        Specifications when the nameplate matches, otherwise a class average.
-        Battery kilowatt-hours are estimated from electric range × wall energy
-        use, or taken from the model name when it includes a pack size.
-        Materials and factory grams are parametric GREET-style factors (steel,
-        aluminum, copper, other materials, NMC or LFP pack, and a generic
-        assembly add-on), not a plant-specific LCA. Disposal is the cost of
-        shredding and residue. Recycling is a separate credit against the
-        build (steel, aluminum, copper, and a smaller pack credit for LFP
-        than NMC). Canada has no national ELV law; second-life packs and
-        export are not modelled. Electricity: ECCC 2026
-        provincial consumption intensities. Fuel production is a Canada-average
-        well-to-tank estimate. Tailpipe grams per kilometre are NRCan’s
-        published values. Heavy pickups above the EnerGuide test weight limit
-        are absent.{" "}
-        <NavLink to="/details" className="text-link">
-          Details
-        </NavLink>
-      </p>
+      {picks.length > 0 && (
+        <p className="note">
+          Vehicle list and consumption: Natural Resources Canada EnerGuide
+          ratings (1995–2026). Curb weight: Transport Canada Canadian Vehicle
+          Specifications when the nameplate matches, otherwise a class average.
+          Battery kilowatt-hours are estimated from electric range × wall energy
+          use, or taken from the model name when it includes a pack size.
+          Materials and factory grams are parametric GREET-style factors (steel,
+          aluminum, copper, other materials, NMC or LFP pack, and a generic
+          assembly add-on), not a plant-specific LCA. Disposal is the cost of
+          shredding and residue. Recycling is a separate credit against the
+          build (steel, aluminum, copper, and a smaller pack credit for LFP
+          than NMC). Canada has no national ELV law; second-life packs and
+          export are not modelled. Electricity: ECCC 2026
+          provincial consumption intensities. Fuel production is a Canada-average
+          well-to-tank estimate. Tailpipe grams per kilometre are NRCan’s
+          published values. Heavy pickups above the EnerGuide test weight limit
+          are absent.{" "}
+          <NavLink to="/details" className="text-link">
+            Details
+          </NavLink>
+        </p>
+      )}
     </main>
   );
 }

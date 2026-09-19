@@ -53,10 +53,12 @@ export default function Details() {
           </li>
         </ol>
         <p>
-          With two or three cars, a sentence above the cards states the lifetime
-          comparison in the selected province (for example that an EV has about
-          a quarter the emissions of a hybrid in Ontario, and about half in
-          Alberta).
+          With two or three cars, a strip above the cards shows aligned lifetime
+          totals and a sentence for the selected province (for example that an
+          EV has about a quarter the emissions of a hybrid in Ontario, and about
+          half in Alberta). If you have not picked cars yet, a starter
+          comparison loads a 2024 Model Y Long Range AWD against a 2024 RAV4
+          Hybrid AWD.
         </p>
         <p>
           Lifetime totals use 250,000 km, so one-time stages can sit next to
