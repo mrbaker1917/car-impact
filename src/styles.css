@@ -225,11 +225,60 @@ select:focus {
   font-size: 0.88rem;
 }
 
+.empty-state {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1.15rem 1.2rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.empty-state p {
+  margin: 0 0 0.85rem;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
+.starter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  width: 100%;
+  max-width: 28rem;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: #fffaf1;
+  border-radius: 10px;
+  padding: 0.75rem 0.9rem;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+}
+
+.starter:hover,
+.starter:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.starter-title {
+  font-weight: 650;
+  font-family: Fraunces, Georgia, serif;
+  font-size: 1.12rem;
+}
+
+.starter-meta {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .picks {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  min-height: 2.4rem;
   margin-bottom: 1.5rem;
 }
 
@@ -281,6 +330,83 @@ select:focus {
   font-size: 1.12rem;
   line-height: 1.45;
   color: var(--ink);
+}
+
+.compare-strip {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1.2rem 1.25rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.compare-strip h2 {
+  font-family: Fraunces, Georgia, serif;
+  font-weight: 650;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.7rem;
+}
+
+.compare-strip .insight {
+  max-width: none;
+  margin: 0 0 1.1rem;
+}
+
+.compare-strip-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+}
+
+.compare-strip-row {
+  display: grid;
+  grid-template-columns: minmax(9rem, 1.15fr) minmax(7rem, 1.5fr) auto;
+  grid-template-areas: "name bar stat";
+  gap: 0.55rem 1rem;
+  align-items: center;
+}
+
+.compare-strip-name {
+  grid-area: name;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.compare-strip-name .badge {
+  display: block;
+  margin-bottom: 0.12rem;
+}
+
+.compare-strip-bar {
+  grid-area: bar;
+}
+
+.compare-strip-stat {
+  grid-area: stat;
+  font-family: Fraunces, Georgia, serif;
+  font-weight: 650;
+  font-size: 1.55rem;
+  letter-spacing: -0.03em;
+  text-align: right;
+  white-space: nowrap;
+  line-height: 1.1;
+}
+
+.compare-strip-stat span {
+  display: block;
+  font-family: "Source Sans 3", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 0.12rem;
+}
+
+.compare-strip-legend {
+  margin-top: 0.95rem;
 }
 
 .compare {
@@ -338,6 +464,10 @@ select:focus {
   border-radius: 99px;
   overflow: hidden;
   background: var(--empty);
+}
+
+.compare-strip .bar {
+  height: 18px;
 }
 
 .bar i {
@@ -502,5 +632,12 @@ select:focus {
 @media (max-width: 800px) {
   .controls {
     grid-template-columns: 1fr;
+  }
+
+  .compare-strip-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "name stat"
+      "bar bar";
   }
 }
