@@ -1,16 +1,19 @@
 import { useEffect } from "react";
 import { NavLink, SiteLink } from "./NavLink";
+import { SITE_TITLE, TitleBanner } from "./TitleBanner";
 
 export default function Details() {
   useEffect(() => {
-    document.title = "Details — Environmental Impact of Cars — Canada";
+    document.title = `Details — ${SITE_TITLE}`;
     return () => {
-      document.title = "Environmental Impact of Cars — Canada";
+      document.title = SITE_TITLE;
     };
   }, []);
 
   return (
-    <main className="page doc">
+    <>
+      <TitleBanner as="p" />
+      <main className="page doc">
       <header className="masthead">
         <p className="masthead-links">
           <NavLink to="/" className="text-link">
@@ -225,5 +228,6 @@ export default function Details() {
         <p>About 30,800 vehicle rows are in the built catalogue.</p>
       </div>
     </main>
+    </>
   );
 }
