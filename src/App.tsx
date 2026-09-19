@@ -26,6 +26,7 @@ import { parseShare, writeShare } from "./lib/share";
 import { resolveStarterPair, STARTER_PAIR } from "./lib/starters";
 import { CompareStrip } from "./CompareStrip";
 import { NavLink, SiteLink } from "./NavLink";
+import { TitleBanner } from "./TitleBanner";
 import { fuelLabel, type Vehicle } from "./types";
 
 const MAX_PICKS = 3;
@@ -170,9 +171,10 @@ export default function App() {
   const starterPair = catalogueReady ? resolveStarterPair(vehicles) : null;
 
   return (
-    <main className="page">
+    <>
+      <TitleBanner />
+      <main className="page">
       <header className="masthead">
-        <h1>Environmental Impact of Cars</h1>
         <p className="lede">
           Compare mining, factory, driving, and end-of-life emissions for cars
           sold in Canada. Switch province to see how the grid changes the rest
@@ -538,29 +540,12 @@ export default function App() {
         </section>
       )}
 
-      {picks.length > 0 && (
-        <p className="note">
-          Vehicle list and consumption: Natural Resources Canada EnerGuide
-          ratings (1995–2026). Curb weight: Transport Canada Canadian Vehicle
-          Specifications when the nameplate matches, otherwise a class average.
-          Battery kilowatt-hours are estimated from electric range × wall energy
-          use, or taken from the model name when it includes a pack size.
-          Materials and factory grams are parametric GREET-style factors (steel,
-          aluminum, copper, other materials, NMC or LFP pack, and a generic
-          assembly add-on), not a plant-specific LCA. Disposal is the cost of
-          shredding and residue. Recycling is a separate credit against the
-          build (steel, aluminum, copper, and a smaller pack credit for LFP
-          than NMC). Canada has no national ELV law; second-life packs and
-          export are not modelled. Electricity: ECCC 2026
-          provincial consumption intensities. Fuel production is a Canada-average
-          well-to-tank estimate. Tailpipe grams per kilometre are NRCan’s
-          published values. Heavy pickups above the EnerGuide test weight limit
-          are absent.{" "}
-          <NavLink to="/details" className="text-link">
-            Details
-          </NavLink>
-        </p>
-      )}
+      <p className="note">
+        <NavLink to="/details" className="text-link">
+          Details
+        </NavLink>
+      </p>
     </main>
+    </>
   );
 }
